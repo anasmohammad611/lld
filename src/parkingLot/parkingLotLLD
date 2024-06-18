@@ -1,0 +1,361 @@
+Requirement Gathering / Clarification:
+
+Entrances and Exits:
+    1 Entrance
+    1 Exit
+
+Types of Parking Spots:
+    2 Wheeler
+    4 Wheeler
+
+Payment:
+    Hourly / Minute based charge (Mixed)
+
+Floors:
+    No
+
+Objects:
+    Vehicle:
+        vehicleNo: Int
+        vehicleType: VehicleType (Enum)
+
+    Ticket:
+        entryTime: Long
+        parkingSpot: ParkingSpot
+
+    Entrance Gate:
+        findParkingSpace(): Nearest parking to the entrance
+        updateParkingSpace()
+        generateTicket()
+
+    Parking Spot:
+        id: Int
+        isEmpty: Boolean
+        vehicle: Vehicle
+        price: Int
+        type: ParkingSpotType (Enum)
+
+    Exit Gate:
+        costCalculation()
+        payment()
+        updateParkingSpot()
+
+Design Approaches:
+    Top Down
+    Bottom Up (Chosen Approach)
+
+Design Patterns Used:
+    Strategy
+    Factory
+    Dependency Inversion
+
+
+Class Structure:
+Vehicle
+public class Vehicle {
+    private int vehicleNo;
+    private VehicleType vehicleType;
+    
+    // Constructor, Getters, Setters
+}
+
+General Class: Parking Spot (has-a vehicle)
+public class ParkingSpot {
+    private int id;
+    private boolean isEmpty;
+    private Vehicle vehicle;
+    private int price;
+    private ParkingSpotType type;
+    
+    public void parkVehicle(Vehicle vehicle) {
+        // Implementation
+    }
+    
+    public void removeVehicle() {
+        // Implementation
+    }
+    // Constructor, Getters, Setters
+}
+
+Specialized Parking Spots
+public class TwoWheelerSpot extends ParkingSpot {
+    public TwoWheelerSpot() {
+        super.setPrice(10);
+    }
+}
+public class FourWheelerSpot extends ParkingSpot {
+    public FourWheelerSpot() {
+        super.setPrice(20);
+    }
+}
+
+ParkingSpotManager (has-a parking spot)
+public class ParkingSpotManager {
+    protected List<ParkingSpot> list;
+    
+    public ParkingSpotManager(List<ParkingSpot> list) {
+        this.list = list;
+    }
+    
+    public ParkingSpot findParkingSpace() {
+        // Strategy pattern implementation
+    }
+    
+    public void addParkingSpace(ParkingSpot spot) {
+        list.add(spot);
+    }
+    
+    public void removeParkingSpace(ParkingSpot spot) {
+        list.remove(spot);
+    }
+    
+    public void parkVehicle(Vehicle vehicle) {
+        // Implementation
+    }
+    
+    public void removeVehicle(Vehicle vehicle) {
+        // Implementation
+    }
+}
+
+
+Specialized Parking Spot Managers
+public class TwoWheelerManager extends ParkingSpotManager {
+    public TwoWheelerManager(List<ParkingSpot> list) {
+        super(list);
+    }
+}
+
+public class FourWheelerManager extends ParkingSpotManager {
+    public FourWheelerManager(List<ParkingSpot> list) {
+        super(list);
+    }
+}
+
+
+Parking Strategy
+public interface ParkingStrategy {
+    ParkingSpot find();
+}
+
+public class NearToEntrance implements ParkingStrategy {
+    public ParkingSpot find() {
+        // Implementation using min-heap for each Entrance
+    }
+}
+
+public class NearToEntranceAndElevator implements ParkingStrategy {
+    public ParkingSpot find() {
+        // Implementation
+    }
+}
+
+
+ParkingSpotManagerFactory (has-a ParkingSpotManager)
+public class ParkingSpotManagerFactory {
+    public ParkingSpotManager getParkingSpotManager(Vehicle vehicle) {
+        if (vehicle.getVehicleType() == VehicleType.TWO_WHEELER) {
+            return new TwoWheelerManager(/* Pass appropriate list */);
+        } else {
+            return new FourWheelerManager(/* Pass appropriate list */);
+        }
+    }
+}
+
+
+Ticket (has-a vehicle, parking spot)
+public class Ticket {
+    private long entryTime;
+    private Vehicle vehicle;
+    private ParkingSpot parkingSpot;
+    
+    // Constructor, Getters, Setters
+}
+
+
+EntranceGate (has-a ParkingSpotManagerFactory, Ticket)
+public class EntranceGate {
+    private ParkingSpotManagerFactory factory;
+    private ParkingSpotManager parkingSpotManager;
+    private Ticket ticket;
+    
+    public ParkingSpot findParkingSpace(Vehicle vehicle) {
+        return factory.getParkingSpotManager(vehicle).findParkingSpace();
+    }
+    
+    public ParkingSpot bookSpot(Vehicle vehicle) {
+        // Implementation
+    }
+    
+    public Ticket generateTicket(Vehicle vehicle, ParkingSpot parkingSpot) {
+        // Implementation
+    }
+}
+
+
+ExitGate
+public class ExitGate {
+    private String paymentMethod;
+    private ParkingSpotManagerFactory parkingSpotManagerFactory;
+    private Ticket ticket;
+    private CostComputationFactory costComputationFactory;
+    private PaymentFactory paymentFactory;
+    
+    public double priceCalculation() {
+        return costComputationFactory.getCostComputation(ticket).price(ticket);
+    }
+    
+    public void makePayment() {
+        double amount = priceCalculation();
+        paymentFactory.getPaymentMethod(paymentMethod).makePayment(amount);
+    }
+    
+    public void removeVehicle() {
+        parkingSpotManagerFactory.getParkingSpotManager(ticket.getVehicle()).removeVehicle(ticket.getVehicle());
+    }
+}
+
+
+CostComputationFactory
+public class CostComputationFactory {
+    public CostComputation getCostComputation(Ticket ticket) {
+        if (ticket.getVehicle().getVehicleType() == VehicleType.TWO_WHEELER) {
+            return new TwoWheelerCostComputation();
+        } else {
+            return new FourWheelerCostComputation();
+        }
+    }
+}
+
+
+CostComputation (has-a Pricing Strategy)
+public abstract class CostComputation {
+    protected PricingStrategy pricingStrategy;
+    
+    public abstract double price(Ticket ticket);
+}
+
+public class TwoWheelerCostComputation extends CostComputation {
+    public TwoWheelerCostComputation() {
+        this.pricingStrategy = new Hourly();
+    }
+    
+    @Override
+    public double price(Ticket ticket) {
+        return pricingStrategy.price(ticket);
+    }
+}
+
+public class FourWheelerCostComputation extends CostComputation {
+    public FourWheelerCostComputation() {
+        this.pricingStrategy = new Minute();
+    }
+    
+    @Override
+    public double price(Ticket ticket) {
+        return pricingStrategy.price(ticket);
+    }
+}
+
+
+PricingStrategy
+public interface PricingStrategy {
+    double price(Ticket ticket);
+}
+
+public class DefaultPricing implements PricingStrategy {
+    @Override
+    public double price(Ticket ticket) {
+        return ticket.getParkingSpot().getPrice();
+    }
+}
+
+public class Hourly implements PricingStrategy {
+    @Override
+    public double price(Ticket ticket) {
+        long hours = (System.currentTimeMillis() - ticket.getEntryTime()) / (1000 * 60 * 60);
+        return hours * ticket.getParkingSpot().getPrice();
+    }
+}
+
+public class Minute implements PricingStrategy {
+    @Override
+    public double price(Ticket ticket) {
+        long minutes = (System.currentTimeMillis() - ticket.getEntryTime()) / (1000 * 60);
+        return minutes * ticket.getParkingSpot().getPrice();
+    }
+}
+
+
+PaymentFactory
+public class PaymentFactory {
+    public Payment getPayment(String paymentMethod) {
+        switch (paymentMethod) {
+            case "Cash":
+                return new CashPayment();
+            case "Card":
+                return new CardPayment();
+            case "UPI":
+                return new UPIPayment();
+            default:
+                return new DefaultPayment();
+        }
+    }
+}
+
+
+Payment
+public abstract class Payment {
+    protected PaymentStrategy paymentStrategy;
+    
+    public abstract void makePayment(double amount);
+}
+
+public class CashPayment extends Payment {
+    public CashPayment() {
+        this.paymentStrategy = new Cash();
+    }
+    
+    @Override
+    public void makePayment(double amount) {
+        paymentStrategy.makePayment(amount);
+    }
+}
+
+public class CardPayment extends Payment {
+    public CardPayment() {
+        this.paymentStrategy = new Card();
+    }
+    
+    @Override
+    public void makePayment(double amount) {
+        paymentStrategy.makePayment(amount);
+    }
+}
+
+
+PaymentStrategy
+public interface PaymentStrategy {
+    void makePayment(double amount);
+}
+
+public class Cash implements PaymentStrategy {
+    @Override
+    public void makePayment(double amount) {
+        // Save in cash table
+    }
+}
+
+public class Card implements PaymentStrategy {
+    @Override
+    public void makePayment(double amount) {
+        // Save in card table
+    }
+}
+
+public class UPIPayment implements PaymentStrategy {
+    @Override
+    public void makePayment(double amount) {
+        // Save in UPI table
+    }
+}
